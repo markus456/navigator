@@ -3,6 +3,7 @@ project(navigator)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_$<CONFIG> ${CMAKE_BINARY_DIR})
 
+# TODO: Download these at configure time
 include_directories(SDL2/include)
 include_directories(SDL2_ttf/include)
 
