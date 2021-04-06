@@ -1,0 +1,5 @@
+build/
+.vscode
+SDL2/
+SDL2_ttf/
+*.code-workspace
