@@ -1,4 +1,4 @@
-#include "objects.hh"
+#include "../objects.hh"
 
 #include <vector>
 #include <iostream>

@@ -5,7 +5,7 @@
 
 #include <memory>
 
-class Navigator : public Object
+class Navigator : public Object, public EventListener
 {
 public:
     Navigator();
