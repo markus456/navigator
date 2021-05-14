@@ -9,6 +9,7 @@
 #include "graphics.hh"
 #include "objects.hh"
 #include "world.hh"
+#include "events.hh"
 
 using namespace std;
 using chrono::duration_cast;
@@ -46,6 +47,102 @@ public:
         }
 
         SDL_RenderGetViewport(m_renderer, &m_camera);
+
+        EventGenerator::add(this, SDL_QUIT, [this](const auto &event)
+                            { m_running = false; });
+
+        EventGenerator::add(this, SDL_MOUSEMOTION, [this](const auto &event)
+                            { on_mouse_move(event); });
+
+        EventGenerator::add(this, SDL_MOUSEWHEEL, [this](const auto &event)
+                            { on_mouse_wheel(event); });
+
+        EventGenerator::add(this, SDL_KEYDOWN, [this](const auto &event)
+                            { on_keydown(event); });
+
+        EventGenerator::add(this, SDL_MOUSEBUTTONUP, [this](const auto &event)
+                            { on_mousebuttonup(event); });
+    }
+
+    void on_mouse_move(const SDL_Event &event)
+    {
+        m_mouse.x = event.motion.x;
+        m_mouse.y = event.motion.y;
+    }
+
+    void on_mouse_wheel(const SDL_Event &event)
+    {
+        for (const auto &o : m_objects)
+        {
+            if (o->is_inside(m_mouse))
+            {
+                if (event.wheel.y > 0)
+                {
+                    o->set_rotation(o->rotation() + 5);
+                }
+                else if (event.wheel.y < 0)
+                {
+                    o->set_rotation(o->rotation() - 5);
+                }
+            }
+        }
+    }
+
+    void on_keydown(const SDL_Event &event)
+    {
+
+        for (const auto &o : m_objects)
+        {
+            if (o->is_inside(m_mouse))
+            {
+                switch (event.key.keysym.sym)
+                {
+                case SDLK_LEFT:
+                    o->set_position(o->position() + Point{-1, 0});
+                    break;
+                case SDLK_RIGHT:
+                    o->set_position(o->position() + Point{1, 0});
+                    break;
+                case SDLK_DOWN:
+                    o->set_position(o->position() + Point{0, 1});
+                    break;
+                case SDLK_UP:
+                    o->set_position(o->position() + Point{0, -1});
+                    break;
+                }
+            }
+        }
+
+        switch (event.key.keysym.sym)
+        {
+        case SDLK_w:
+            m_camera.y -= 1;
+            break;
+        case SDLK_s:
+            m_camera.y += 1;
+            break;
+        case SDLK_a:
+            m_camera.x += 1;
+            break;
+        case SDLK_d:
+            m_camera.x -= 1;
+            break;
+        }
+    }
+
+    void on_mousebuttonup(const SDL_Event &event)
+    {
+        if (event.button.button == SDL_BUTTON_LEFT)
+        {
+            m_objects.push_back(Navigator::create());
+            m_objects.back()->set_position({m_mouse.x, m_mouse.y});
+        }
+        else if (event.button.button == SDL_BUTTON_RIGHT)
+        {
+            auto it = std::remove_if(m_objects.begin(), m_objects.end(), [&](const auto &o)
+                                     { return o->is_inside(m_mouse); });
+            m_objects.erase(it, m_objects.end());
+        }
     }
 
     void poll_event()
@@ -54,94 +151,12 @@ public:
 
         while (SDL_PollEvent(&event))
         {
-            switch (event.type)
-            {
-            case SDL_QUIT:
-                m_running = false;
-                break;
+            EventGenerator::handle_event(event);
+        }
 
-            case SDL_MOUSEMOTION:
-                m_mouse.x = event.motion.x;
-                m_mouse.y = event.motion.y;
-                break;
-
-            case SDL_MOUSEWHEEL:
-                for (const auto &o : m_objects)
-                {
-                    if (o->is_inside(m_mouse))
-                    {
-                        if (event.wheel.y > 0)
-                        {
-                            o->set_rotation(o->rotation() + 5);
-                        }
-                        else if (event.wheel.y < 0)
-                        {
-                            o->set_rotation(o->rotation() - 5);
-                        }
-                    }
-                }
-                break;
-
-            case SDL_KEYDOWN:
-                for (const auto &o : m_objects)
-                {
-                    if (o->is_inside(m_mouse))
-                    {
-                        switch (event.key.keysym.sym)
-                        {
-                        case SDLK_LEFT:
-                            o->set_position(o->position() + Point{-1, 0});
-                            break;
-                        case SDLK_RIGHT:
-                            o->set_position(o->position() + Point{1, 0});
-                            break;
-                        case SDLK_DOWN:
-                            o->set_position(o->position() + Point{0, 1});
-                            break;
-                        case SDLK_UP:
-                            o->set_position(o->position() + Point{0, -1});
-                            break;
-                        }
-                    }
-                }
-
-                switch (event.key.keysym.sym)
-                {
-                case SDLK_w:
-                    m_camera.y -= 1;
-                    break;
-                case SDLK_s:
-                    m_camera.y += 1;
-                    break;
-                case SDLK_a:
-                    m_camera.x += 1;
-                    break;
-                case SDLK_d:
-                    m_camera.x -= 1;
-                    break;
-                }
-
-                break;
-
-            case SDL_MOUSEBUTTONUP:
-                if (event.button.button == SDL_BUTTON_LEFT)
-                {
-                    m_objects.push_back(Navigator::create());
-                    m_objects.back()->set_position({m_mouse.x, m_mouse.y});
-                }
-                else if (event.button.button == SDL_BUTTON_RIGHT)
-                {
-                    auto it = std::remove_if(m_objects.begin(), m_objects.end(), [&](const auto &o) {
-                        return o->is_inside(m_mouse);
-                    });
-                    m_objects.erase(it, m_objects.end());
-                }
-                break;
-
-            default:
-                //cout << "Got event: " << event.type << endl;
-                break;
-            }
+        for (const auto &o : m_objects)
+        {
+            o->tick();
         }
     }
 
@@ -194,8 +209,10 @@ public:
                     SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
                 }
 
-                SDL_RenderDrawLineF(m_renderer, line.first.x, line.first.y, line.second.x, line.second.y);
+                //SDL_RenderDrawLineF(m_renderer, line.first.x, line.first.y, line.second.x, line.second.y);
             }
+
+            l->render(m_renderer);
         }
 
         // Texture texture(m_renderer, "media/image.bmp");
@@ -204,8 +221,7 @@ public:
         SDL_RenderPresent(m_renderer);
     }
 
-    void
-    run()
+    void run()
     {
         constexpr const milliseconds frame_time{1000 / FRAMERATE};
         auto prev = Clock::now();
@@ -253,8 +269,7 @@ private:
 
     Point m_mouse;
 
-    std::unique_ptr<Object> m_next_obj;
-    std::vector<std::unique_ptr<Object>> m_objects;
+    std::vector<std::unique_ptr<Navigator>> m_objects;
 };
 
 int main(int argc, char **argv)

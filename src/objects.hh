@@ -134,8 +134,13 @@ struct Object
     // Check if the point is inside this object
     bool is_inside(const Point &p) const
     {
-        Point p2{p.x, 9e10};
-        return get_collisions({p, p2}).second.size() % 2;
+        Point p1{p.x, 9e10};
+        Point p2{p.x, -9e10};
+
+        auto collisions1 = get_collisions({p, p1}).second;
+        auto collisions2 = get_collisions({p, p2}).second;
+
+        return collisions1.size() % 2 && collisions2.size() % 2;
     }
 
 private:
