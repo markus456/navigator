@@ -5,31 +5,39 @@
 
 using namespace std;
 
-Navigator::Navigator()
+Navigator::Navigator(SDL_Renderer *renderer)
     : Object({
-          {-25.0, -25.0},
-          {25.0, -25.0},
-          {25.0, 25.0},
-          {-25.0, 25.0},
-      })
+          {0, 0},
+          {50, 0},
+          {50, 50},
+          {0, 50},
+      }),
+      m_polygon(this, renderer)
 {
     listen(SDL_MOUSEMOTION, &Navigator::on_mouse_move);
-    set_color(COLOR_GREEN);
+    m_polygon.set_fill(COLOR_GREEN);
+    m_polygon.set_outline(COLOR_BLACK);
+    m_polygon.redraw();
 }
 
 // static
-std::unique_ptr<Navigator> Navigator::create()
+std::unique_ptr<Navigator> Navigator::create(SDL_Renderer *renderer)
 {
-    return std::make_unique<Navigator>();
+    return std::make_unique<Navigator>(renderer);
 }
 
 void Navigator::tick()
 {
-    set_points(points());
+}
+
+void Navigator::render(SDL_Renderer *renderer) const
+{
+    m_polygon.render(renderer);
 }
 
 void Navigator::on_mouse_move(const SDL_Event &event)
 {
     Point mouse{(double)event.motion.x, (double)event.motion.y};
-    set_color(is_inside(mouse) ? COLOR_BLUE : COLOR_GREEN);
+    m_polygon.set_fill(is_inside(mouse) ? COLOR_BLUE : COLOR_GREEN);
+    m_polygon.redraw();
 }

@@ -7,17 +7,19 @@
 
 #include <memory>
 
-class Navigator : public Object, public EventListener<Navigator>, public Polygon
+class Navigator : public Object, public EventListener<Navigator>, public Renderable
 {
 public:
-    Navigator();
+    Navigator(SDL_Renderer *renderer);
 
-    static std::unique_ptr<Navigator> create();
+    static std::unique_ptr<Navigator> create(SDL_Renderer *renderer);
 
     void tick() override;
+
+    void render(SDL_Renderer *renderer) const override;
 
 private:
     void on_mouse_move(const SDL_Event &event);
 
-    Polygon m_renderer;
+    Polygon m_polygon;
 };

@@ -25,15 +25,27 @@ struct Renderable
 
 struct Polygon : public Renderable
 {
-    void set_points(std::vector<Point> points);
+    Polygon(Object *obj, SDL_Renderer *renderer);
 
-    void set_color(const Color &color);
+    ~Polygon();
+
+    void set_fill(const Color &color);
+
+    void set_outline(const Color &color);
+
+    // Redraws the polygon, must be called whenever the color of the polygon changes
+    void redraw();
 
     void render(SDL_Renderer *renderer) const override;
 
 private:
-    std::vector<Point> m_points;
-    Color m_color;
+    Object *m_obj;
+    SDL_Renderer *m_renderer;
+    SDL_Texture *m_texture;
+    int m_width;
+    int m_height;
+    Color m_fill = COLOR_WHITE;
+    Color m_outline = COLOR_BLACK;
 };
 
 class Texture

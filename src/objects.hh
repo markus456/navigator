@@ -29,6 +29,20 @@ struct Point
         y *= val;
     }
 
+    void rotate(double d, Point center)
+    {
+        const double PI = 3.1415;
+        double r = d * PI * 2 / 360;
+        Point tmp = *this;
+        tmp -= center;
+        double xi = tmp.x * cos(r) - tmp.y * sin(r);
+        double yi = tmp.x * sin(r) + tmp.y * cos(r);
+        tmp.x = xi;
+        tmp.y = yi;
+        tmp += center;
+        *this = tmp;
+    }
+
     void rotate(double d)
     {
         const double PI = 3.1415;
@@ -103,15 +117,26 @@ struct Object
     // Bounds of the object, not translated or rotated
     const std::vector<Point> &bounds() const;
 
-    // Get the radius of the bounding circle that encompasses all points of the polygon,
-    // used to perform a quick check if two objects are near each other.
-    double radius() const;
+    // X and Y position of the object center. Rotations are done around this point.
+    const Point &center() const;
+
+    // Get the set of lines that form the polygon
+    std::vector<Line> bounding_lines() const;
+
+    // Get the set of horizontal lines that form the polygon
+    std::vector<Line> scan_lines() const;
+
+    // The bounding rectangle
+    std::pair<Point, Point> bounding_rect() const;
 
     // Get the bounding polygon as points, rotated and translated to world coordinates
     std::vector<Point> points() const;
 
     // Get the set of lines that form the polygon, in world coordinates
     std::vector<Line> lines() const;
+
+    // Get points where the lines collide with the given line
+    static std::pair<bool, std::vector<Point>> get_collisions(const std::vector<Line> &my_lines, const Line &line);
 
     // Get the points where the two objects collide
     std::pair<bool, std::vector<Point>> get_collisions(const Object &other) const;
@@ -144,8 +169,12 @@ struct Object
     }
 
 private:
+    std::vector<Line> to_lines(const std::vector<Point> &pts) const;
+
     Point m_pos{0, 0};
     std::vector<Point> m_bounds;
     double m_dir{0.0};
-    double m_rad{0.0};
+    Point m_min{0.0};
+    Point m_max{0.0};
+    Point m_center{0.0};
 };

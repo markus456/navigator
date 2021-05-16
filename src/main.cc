@@ -39,7 +39,7 @@ public:
             throw Error("Window init failed");
         }
 
-        m_renderer = SDL_CreateRenderer(m_window, -1, 0);
+        m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_TARGETTEXTURE);
 
         if (!m_renderer)
         {
@@ -134,7 +134,7 @@ public:
     {
         if (event.button.button == SDL_BUTTON_LEFT)
         {
-            m_objects.push_back(Navigator::create());
+            m_objects.push_back(Navigator::create(m_renderer));
             m_objects.back()->set_position({m_mouse.x, m_mouse.y});
         }
         else if (event.button.button == SDL_BUTTON_RIGHT)
@@ -167,6 +167,8 @@ public:
 
         for (const auto &l : m_objects)
         {
+            l->render(m_renderer);
+
             for (auto line : l->lines())
             {
                 int collisions = 0;
@@ -208,15 +210,8 @@ public:
                 {
                     SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
                 }
-
-                //SDL_RenderDrawLineF(m_renderer, line.first.x, line.first.y, line.second.x, line.second.y);
             }
-
-            l->render(m_renderer);
         }
-
-        // Texture texture(m_renderer, "media/image.bmp");
-        // texture.render(m_renderer, &rect);
 
         SDL_RenderPresent(m_renderer);
     }
