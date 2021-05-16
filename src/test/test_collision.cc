@@ -19,6 +19,10 @@ public:
     void tick()
     {
     }
+
+    void state_changed(Object::ChangeType type)
+    {
+    }
 };
 
 int main(int argc, char **argv)

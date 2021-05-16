@@ -3,10 +3,17 @@
 #include <cassert>
 #include <iostream>
 #include <algorithm>
+#include <set>
+
+namespace
+{
+    std::set<Object *> s_objects;
+}
 
 Object::Object(std::vector<Point> pts)
     : m_bounds(std::move(pts))
 {
+    s_objects.insert(this);
     Point center{0, 0};
     m_min = m_bounds.front();
     m_max = m_min;
@@ -23,6 +30,43 @@ Object::Object(std::vector<Point> pts)
 
     m_center.x = m_min.x + (m_max.x - m_min.x) / 2;
     m_center.y = m_min.y + (m_max.y - m_min.y) / 2;
+}
+
+Object::~Object()
+{
+    s_objects.erase(this);
+}
+
+void Object::set_collision_enabled(bool enabled)
+{
+    bool changed = m_collision != enabled;
+    m_collision = enabled;
+
+    if (changed)
+    {
+        state_changed(ChangeType::COLLISION);
+    }
+}
+
+bool Object::is_collision_enabled() const
+{
+    return m_collision;
+}
+
+void Object::set_active(bool enabled)
+{
+    bool changed = m_active != enabled;
+    m_active = enabled;
+
+    if (changed)
+    {
+        state_changed(ChangeType::ACTIVE);
+    }
+}
+
+bool Object::is_active() const
+{
+    return m_active;
 }
 
 // X and Y position of the object in the world, [0, 0] is the center of the world.
@@ -226,4 +270,10 @@ std::pair<bool, std::vector<Point>> Object::get_collisions(const Object &other) 
     }
 
     return {rval, points};
+}
+
+bool Object::collision() const
+{
+    return is_collision_enabled() && std::any_of(s_objects.begin(), s_objects.end(), [&](auto o)
+                                                 { return o != this && o->is_collision_enabled() && collision(*o); });
 }

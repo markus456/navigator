@@ -90,42 +90,54 @@ public:
 
     void on_keydown(const SDL_Event &event)
     {
-
-        for (const auto &o : m_objects)
-        {
-            if (o->is_inside(m_mouse))
-            {
-                switch (event.key.keysym.sym)
-                {
-                case SDLK_LEFT:
-                    o->set_position(o->position() + Point{-1, 0});
-                    break;
-                case SDLK_RIGHT:
-                    o->set_position(o->position() + Point{1, 0});
-                    break;
-                case SDLK_DOWN:
-                    o->set_position(o->position() + Point{0, 1});
-                    break;
-                case SDLK_UP:
-                    o->set_position(o->position() + Point{0, -1});
-                    break;
-                }
-            }
-        }
-
         switch (event.key.keysym.sym)
         {
-        case SDLK_w:
-            m_camera.y -= 1;
+        case SDLK_LEFT:
+            m_camera.x -= 1;
             break;
-        case SDLK_s:
-            m_camera.y += 1;
-            break;
-        case SDLK_a:
+        case SDLK_RIGHT:
             m_camera.x += 1;
             break;
-        case SDLK_d:
-            m_camera.x -= 1;
+        case SDLK_UP:
+            m_camera.y += 1;
+            break;
+        case SDLK_DOWN:
+            m_camera.y -= 1;
+            break;
+
+        case SDLK_c:
+            m_objects.push_back(Navigator::create(m_renderer));
+            m_objects.back()->set_position({m_mouse.x, m_mouse.y});
+            break;
+
+        case SDLK_x:
+            if (!m_current.empty())
+            {
+                for (auto a : m_current)
+                {
+                    a->set_selected(false);
+                }
+
+                auto fn = [&](const auto &o)
+                { return m_current.count(o.get()); };
+
+                m_objects.erase(std::remove_if(m_objects.begin(), m_objects.end(), fn));
+                m_current.clear();
+            }
+            break;
+
+        case SDLK_z:
+            for (auto a : m_current)
+            {
+                a->set_collision_enabled(!a->is_collision_enabled());
+            }
+            break;
+
+        case SDLK_v:
+            for (auto a : m_current)
+            {
+                a->set_active(!a->is_active());
+            }
             break;
         }
     }
@@ -134,14 +146,56 @@ public:
     {
         if (event.button.button == SDL_BUTTON_LEFT)
         {
-            m_objects.push_back(Navigator::create(m_renderer));
-            m_objects.back()->set_position({m_mouse.x, m_mouse.y});
+            bool found = false;
+
+            for (const auto &o : m_objects)
+            {
+                if (o->is_active() && o->is_inside(m_mouse))
+                {
+                    found = true;
+
+                    if (m_current.count(o.get()))
+                    {
+                        o->set_selected(false);
+                        m_current.erase(o.get());
+                    }
+                    else
+                    {
+                        if ((SDL_GetModState() & KMOD_CTRL) == 0)
+                        {
+                            for (auto a : m_current)
+                            {
+                                a->set_selected(false);
+                            }
+
+                            m_current.clear();
+                        }
+
+                        o->set_selected(true);
+                        m_current.insert(o.get());
+                    }
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                for (auto a : m_current)
+                {
+                    a->set_selected(false);
+                }
+
+                m_current.clear();
+            }
         }
         else if (event.button.button == SDL_BUTTON_RIGHT)
         {
-            auto it = std::remove_if(m_objects.begin(), m_objects.end(), [&](const auto &o)
-                                     { return o->is_inside(m_mouse); });
-            m_objects.erase(it, m_objects.end());
+            for (auto a : m_current)
+            {
+                a->set_selected(false);
+            }
+
+            m_current.clear();
         }
     }
 
@@ -156,7 +210,10 @@ public:
 
         for (const auto &o : m_objects)
         {
-            o->tick();
+            if (o->is_active())
+            {
+                o->tick();
+            }
         }
     }
 
@@ -200,7 +257,7 @@ public:
                     }
                 }
 
-                SDL_RenderSetViewport(m_renderer, &m_camera);
+                // SDL_RenderSetViewport(m_renderer, &m_camera);
 
                 if (collisions)
                 {
@@ -265,6 +322,8 @@ private:
     Point m_mouse;
 
     std::vector<std::unique_ptr<Navigator>> m_objects;
+
+    std::set<Navigator *> m_current;
 };
 
 int main(int argc, char **argv)

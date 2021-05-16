@@ -14,8 +14,10 @@ struct Color
 static constexpr const Color COLOR_RED = {255, 0, 0};
 static constexpr const Color COLOR_GREEN = {0, 255, 0};
 static constexpr const Color COLOR_BLUE = {0, 0, 255};
+static constexpr const Color COLOR_MAGENTA = {255, 0, 255};
 static constexpr const Color COLOR_WHITE = {255, 255, 255};
 static constexpr const Color COLOR_BLACK = {0, 0, 0};
+static constexpr const Color COLOR_GRAY = {125, 125, 125};
 
 // A graphical element that can be rendered
 struct Renderable

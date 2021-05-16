@@ -94,13 +94,31 @@ using Line = std::pair<Point, Point>;
 // An object that has a position, rotation and a polygon that defines the bounds.
 struct Object
 {
+    // The type of state change that occurred
+    enum class ChangeType
+    {
+        COLLISION, // Collision was enabled or disabled
+        ACTIVE,    // Object was activated or deactivated
+    };
+
     // Construct an object with bounds consisting of a polygon.
     Object(std::vector<Point> lines);
 
-    virtual ~Object() = default;
+    virtual ~Object();
 
     // Called when the world advances one tick
     virtual void tick() = 0;
+
+    // Called whenever the generic object state changes
+    virtual void state_changed(ChangeType state) = 0;
+
+    void set_collision_enabled(bool enabled);
+
+    bool is_collision_enabled() const;
+
+    void set_active(bool active);
+
+    bool is_active() const;
 
     // X and Y position of the object in the world, [0, 0] is the center of the world.
     const Point &position() const;
@@ -144,6 +162,9 @@ struct Object
     // Get points where this object collides with the given line
     std::pair<bool, std::vector<Point>> get_collisions(const Line &line) const;
 
+    // Check if this object collides with any object
+    bool collision() const;
+
     // Check if this object collides with another object
     bool collision(const Object &other) const
     {
@@ -177,4 +198,6 @@ private:
     Point m_min{0.0};
     Point m_max{0.0};
     Point m_center{0.0};
+    bool m_collision{true};
+    bool m_active;
 };
