@@ -11,8 +11,8 @@ Polygon::Polygon(Object *obj, SDL_Renderer *renderer)
 {
     // Add some extra space so that bounding lines are drawn correctly for rectangles
     auto [min, max] = m_obj->bounding_rect();
-    m_width = (max.x - min.x) + 5;
-    m_height = (max.y - min.y) + 5;
+    m_width = (max.x - 0) + 5;
+    m_height = (max.y - 0) + 5;
 
     m_texture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, m_width, m_height);
 }

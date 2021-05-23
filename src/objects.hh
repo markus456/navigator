@@ -8,8 +8,15 @@
 
 struct Point
 {
-    double x;
-    double y;
+    double x = 0;
+    double y = 0;
+
+    Point() = default;
+
+    Point(double xi, double yi)
+        : x(xi), y(yi)
+    {
+    }
 
     inline void operator+=(const Point &rhs)
     {
@@ -195,9 +202,9 @@ private:
     Point m_pos{0, 0};
     std::vector<Point> m_bounds;
     double m_dir{0.0};
-    Point m_min{0.0};
-    Point m_max{0.0};
-    Point m_center{0.0};
+    Point m_min;
+    Point m_max;
+    Point m_center;
     bool m_collision{true};
     bool m_active;
 };

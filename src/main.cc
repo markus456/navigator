@@ -105,11 +105,6 @@ public:
             m_camera.y -= 1;
             break;
 
-        case SDLK_c:
-            m_objects.push_back(Navigator::create(m_renderer));
-            m_objects.back()->set_position({m_mouse.x, m_mouse.y});
-            break;
-
         case SDLK_x:
             if (!m_current.empty())
             {
@@ -138,6 +133,20 @@ public:
             {
                 a->set_active(!a->is_active());
             }
+            break;
+
+        case SDLK_1:
+            m_objects.push_back(Navigator::create(m_renderer));
+            m_objects.back()->set_position({m_mouse.x, m_mouse.y});
+            break;
+
+        case SDLK_2:
+            m_walls.push_back(Wall::create(m_renderer, m_selection));
+            m_selection.clear();
+            break;
+
+        case SDLK_ESCAPE:
+            m_running = false;
             break;
         }
     }
@@ -186,6 +195,8 @@ public:
                 }
 
                 m_current.clear();
+
+                m_selection.push_back(m_mouse);
             }
         }
         else if (event.button.button == SDL_BUTTON_RIGHT)
@@ -196,6 +207,7 @@ public:
             }
 
             m_current.clear();
+            m_selection.clear();
         }
     }
 
@@ -221,6 +233,11 @@ public:
     {
         SDL_SetRenderDrawColor(m_renderer, 50, 50, 50, 255);
         SDL_RenderClear(m_renderer);
+
+        for (const auto &w : m_walls)
+        {
+            w->render(m_renderer);
+        }
 
         for (const auto &l : m_objects)
         {
@@ -270,6 +287,18 @@ public:
             }
         }
 
+        for (auto p : m_selection)
+        {
+            SDL_Rect rect;
+            rect.w = 4;
+            rect.h = 4;
+            rect.x = p.x - 2;
+            rect.y = p.y - 2;
+
+            SDL_SetRenderDrawColor(m_renderer, 50, 125, 200, 255);
+            SDL_RenderFillRect(m_renderer, &rect);
+        }
+
         SDL_RenderPresent(m_renderer);
     }
 
@@ -300,9 +329,6 @@ public:
             {
                 this_thread::sleep_for(time_left);
             }
-
-            //cout << "\rLoop time: " << loop_time.count() << " Framerate: " << frames << "                 ";
-            //cout.flush();
         }
     }
 
@@ -321,7 +347,10 @@ private:
 
     Point m_mouse;
 
+    std::vector<std::unique_ptr<Wall>> m_walls;
     std::vector<std::unique_ptr<Navigator>> m_objects;
+
+    std::vector<Point> m_selection;
 
     std::set<Navigator *> m_current;
 };

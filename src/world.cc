@@ -5,14 +5,35 @@
 
 using namespace std;
 
-Navigator::Navigator(SDL_Renderer *renderer)
-    : Object({
-          {0, 0},
-          {50, 0},
-          {50, 50},
-          {0, 50},
-      }),
-      m_polygon(this, renderer)
+// static
+std::unique_ptr<Wall> Wall::create(SDL_Renderer *renderer, std::vector<Point> outline)
+{
+    return std::unique_ptr<Wall>(new Wall(renderer, outline));
+}
+
+Wall::Wall(SDL_Renderer *renderer, std::vector<Point> outline)
+    : Object(outline), m_polygon(this, renderer)
+{
+    m_polygon.set_fill(COLOR_GRAY);
+    m_polygon.set_outline(COLOR_GREEN);
+    m_polygon.redraw();
+}
+
+void Wall::tick()
+{
+}
+
+void Wall::state_changed(Object::ChangeType type)
+{
+}
+
+void Wall::render(SDL_Renderer *renderer) const
+{
+    m_polygon.render(renderer);
+}
+
+Navigator::Navigator(SDL_Renderer *renderer, std::vector<Point> outline)
+    : Object(outline), m_polygon(this, renderer)
 {
     listen(SDL_MOUSEMOTION, &Navigator::on_mouse_move);
     m_polygon.set_fill(COLOR_GREEN);
@@ -20,10 +41,20 @@ Navigator::Navigator(SDL_Renderer *renderer)
     m_polygon.redraw();
 }
 
+Navigator::Navigator(SDL_Renderer *renderer)
+    : Navigator(renderer, {
+                              {0, 0},
+                              {50, 0},
+                              {50, 50},
+                              {0, 50},
+                          })
+{
+}
+
 // static
 std::unique_ptr<Navigator> Navigator::create(SDL_Renderer *renderer)
 {
-    return std::make_unique<Navigator>(renderer);
+    return std::unique_ptr<Navigator>(new Navigator(renderer));
 }
 
 void Navigator::tick()
