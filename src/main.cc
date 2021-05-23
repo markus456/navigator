@@ -4,6 +4,7 @@
 #include <exception>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include "common.hh"
 #include "graphics.hh"
@@ -22,6 +23,10 @@ static constexpr int WINDOW_WIDTH = 800;
 static constexpr int WINDOW_HEIGHT = 600;
 static constexpr int FRAMERATE = 120;
 
+static const std::string FONT_NAME = "fonts/pixeldroidMenuRegular.ttf";
+static const Color FONT_COLOR = COLOR_WHITE;
+static const int FONT_SIZE = 25;
+
 class Program
 {
 public:
@@ -31,6 +36,8 @@ public:
         {
             throw Error("SDL init failed");
         }
+
+        Text::init();
 
         m_window = SDL_CreateWindow("Navigator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 600, 0);
 
@@ -45,6 +52,8 @@ public:
         {
             throw Error("Renderer init failed");
         }
+
+        m_mouse_label = std::make_unique<Text>(m_renderer);
 
         SDL_RenderGetViewport(m_renderer, &m_camera);
 
@@ -64,10 +73,26 @@ public:
                             { on_mousebuttonup(event); });
     }
 
+    ~Program()
+    {
+        SDL_DestroyRenderer(m_renderer);
+        SDL_DestroyWindow(m_window);
+        Text::finish();
+        SDL_Quit();
+    }
+
     void on_mouse_move(const SDL_Event &event)
     {
         m_mouse.x = event.motion.x;
         m_mouse.y = event.motion.y;
+
+        std::ostringstream ss;
+        ss << "X: " << m_mouse.x << " Y: " << m_mouse.y;
+
+        m_mouse_label->set_text(ss.str(), FONT_NAME, FONT_COLOR, FONT_SIZE);
+        auto p = m_mouse;
+        p += Point(0, -20);
+        m_mouse_label->set_position(p);
     }
 
     void on_mouse_wheel(const SDL_Event &event)
@@ -299,6 +324,8 @@ public:
             SDL_RenderFillRect(m_renderer, &rect);
         }
 
+        m_mouse_label->render(m_renderer);
+
         SDL_RenderPresent(m_renderer);
     }
 
@@ -332,13 +359,6 @@ public:
         }
     }
 
-    ~Program()
-    {
-        SDL_DestroyRenderer(m_renderer);
-        SDL_DestroyWindow(m_window);
-        SDL_Quit();
-    }
-
 private:
     SDL_Window *m_window{nullptr};
     SDL_Renderer *m_renderer{nullptr};
@@ -346,6 +366,7 @@ private:
     bool m_running{true};
 
     Point m_mouse;
+    std::unique_ptr<Text> m_mouse_label;
 
     std::vector<std::unique_ptr<Wall>> m_walls;
     std::vector<std::unique_ptr<Navigator>> m_objects;
@@ -365,7 +386,6 @@ int main(int argc, char **argv)
     catch (runtime_error err)
     {
         cout << err.what() << endl;
-        this_thread::sleep_for(chrono::seconds(5));
     }
 
     return 0;

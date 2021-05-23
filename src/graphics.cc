@@ -1,6 +1,7 @@
 #include "graphics.hh"
 
 #include <cassert>
+#include <unordered_map>
 
 //
 // Polygon
@@ -93,6 +94,99 @@ void Texture::render(SDL_Renderer *renderer, SDL_Rect *rect, double angle) const
 }
 
 Texture::~Texture()
+{
+    SDL_DestroyTexture(m_texture);
+}
+
+//
+// Text
+//
+
+class FontLoader
+{
+public:
+    ~FontLoader()
+    {
+        for (const auto &kv : m_fonts)
+        {
+            TTF_CloseFont(kv.second);
+        }
+    }
+
+    TTF_Font *load(std::string filename, int size)
+    {
+        std::string font_name = filename + '-' + std::to_string(size);
+        auto it = m_fonts.find(font_name);
+
+        if (it == m_fonts.end())
+        {
+            auto font = TTF_OpenFont(filename.c_str(), size);
+
+            if (font)
+            {
+                it = m_fonts.emplace(font_name, font).first;
+            }
+            else
+            {
+                throw Error("Could not load font " + font_name + ": " + std::string(TTF_GetError()));
+            }
+        }
+
+        return it->second;
+    }
+
+private:
+    std::unordered_map<std::string, TTF_Font *> m_fonts;
+};
+
+static std::unique_ptr<FontLoader> loader;
+
+// static
+void Text::init()
+{
+    if (TTF_Init() != 0)
+    {
+        throw Error("TTF_Init failed");
+    }
+
+    loader = std::make_unique<FontLoader>();
+}
+
+void Text::finish()
+{
+    loader.reset();
+    TTF_Quit();
+}
+
+Text::Text(SDL_Renderer *renderer)
+    : m_renderer(renderer)
+{
+}
+
+void Text::set_text(std::string text, std::string font, Color color, int size)
+{
+    SDL_Color sdl_color = {color.red, color.green, color.blue, color.alpha};
+    SDL_Surface *surface = TTF_RenderText_Solid(loader->load(font, size),
+                                                text.c_str(), sdl_color);
+    m_texture = SDL_CreateTextureFromSurface(m_renderer, surface);
+    m_rect.w = surface->w;
+    m_rect.h = surface->h;
+
+    SDL_FreeSurface(surface);
+}
+
+void Text::set_position(Point point)
+{
+    m_rect.x = point.x;
+    m_rect.y = point.y;
+}
+
+void Text::render(SDL_Renderer *renderer) const
+{
+    SDL_RenderCopyEx(renderer, m_texture, nullptr, &m_rect, 0, nullptr, SDL_FLIP_NONE);
+}
+
+Text::~Text()
 {
     SDL_DestroyTexture(m_texture);
 }

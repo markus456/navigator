@@ -65,3 +65,26 @@ public:
 private:
     SDL_Texture *m_texture{nullptr};
 };
+
+class Text : public Renderable
+{
+public:
+    static void init();
+    static void finish();
+
+    Text(SDL_Renderer *renderer);
+
+    ~Text();
+
+    void set_text(std::string text, std::string font, Color color, int size);
+
+    // Position is set as the upper left corner
+    void set_position(Point point);
+
+    void render(SDL_Renderer *renderer) const override;
+
+private:
+    SDL_Texture *m_texture{nullptr};
+    SDL_Renderer *m_renderer;
+    SDL_Rect m_rect;
+};
